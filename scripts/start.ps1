@@ -15,6 +15,19 @@ if (-not (Test-Path $venvPython)) {
 $backendDir  = Join-Path $repoRoot "app\backend"
 $frontendDir = Join-Path $repoRoot "app\frontend"
 
+# Load .env file from backend directory into the current environment
+$envFile = Join-Path $backendDir ".env"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        if ($_ -match "^\s*([^#][^=]+)=(.*)$") {
+            $key = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            [System.Environment]::SetEnvironmentVariable($key, $value, "Process")
+        }
+    }
+    Write-Host "==> Loaded .env from $envFile"
+}
+
 # Kill a process and all of its descendants using taskkill.
 # /F = force | /T = terminate tree | /PID = target process.
 # This only affects the tree rooted at the given PID, so it will not

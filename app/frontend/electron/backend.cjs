@@ -291,10 +291,39 @@ class BackendSupervisor {
     this._emit("stopped");
   }
 
+  // Stop whatever is listening on our backend port so a settings restart can
+  // spawn a fresh process with updated MEETINGBRO_* env (attach-only backends
+  // would otherwise keep running without the new API key).
+  async _freePort(port) {
+    const p = Number(port) || this.port;
+    if (process.platform === "win32") {
+      await new Promise((resolve) => {
+        const ps =
+          `$c = Get-NetTCPConnection -LocalPort ${p} -State Listen -ErrorAction SilentlyContinue | ` +
+          "Select-Object -First 1 -ExpandProperty OwningProcess; " +
+          "if ($c) { Stop-Process -Id $c -Force -ErrorAction SilentlyContinue }";
+        execFile("powershell", ["-NoProfile", "-Command", ps], { windowsHide: true }, () => resolve());
+      });
+      return;
+    }
+    await new Promise((resolve) => {
+      execFile("fuser", ["-k", `${p}/tcp`], { windowsHide: true }, () => resolve());
+    });
+  }
+
   // Restart with fresh env (used after the user changes startup-only settings).
   async restart({ env = {}, port } = {}) {
+    const targetPort = port ?? this.port;
+    const wasAttached = this.attached;
     await this.stop();
-    await this.start({ env, port: port ?? this.port });
+    if (wasAttached || (await this._probeHealth(500))) {
+      await this._freePort(targetPort);
+      this.attached = false;
+      this.child = null;
+      this.childExited = true;
+      await sleep(300);
+    }
+    await this.start({ env, port: targetPort });
   }
 }
 

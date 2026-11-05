@@ -48,6 +48,24 @@ def _detect_ctranslate2_cuda() -> tuple[bool, int, str | None]:
         count = int(get_count())
         if count <= 0:
             return False, 0, None
+
+        # On Windows, CTranslate2 dynamically links to cublas64_12.dll / cublas64_11.dll.
+        # If the driver is present but the CUDA toolkit/runtime DLLs are missing,
+        # inference will fail at runtime. Verify that cuBLAS is actually loadable.
+        import sys
+        if sys.platform == "win32":
+            import ctypes
+            can_load = False
+            for dll_name in ("cublas64_12.dll", "cublas64_11.dll"):
+                try:
+                    ctypes.cdll.LoadLibrary(dll_name)
+                    can_load = True
+                    break
+                except OSError:
+                    pass
+            if not can_load:
+                return False, count, "CUDA driver detected but cuBLAS DLL (cublas64_12.dll) not found"
+
         return True, count, None
     except Exception as exc:
         return False, 0, str(exc)
@@ -85,7 +103,7 @@ def detect_hardware_profile() -> HardwareProfile:
     else:
         whisper_device = "cpu"
         whisper_compute = "int8"
-        whisper_size = "small" if cpu_count <= 4 else "medium"
+        whisper_size = "small"
         runtime_profile = "summary_only" if cpu_count <= 4 else "balanced"
 
     # Keep preview/Qwen on CPU by default. This separates Qwen preview from a

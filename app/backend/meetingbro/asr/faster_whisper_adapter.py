@@ -148,30 +148,34 @@ class FasterWhisperAdapter(ASRAdapter):
         return self._model
 
     @staticmethod
-    def _is_cuda_oom_error(exc: Exception) -> bool:
+    def _is_cuda_runtime_error(exc: Exception) -> bool:
         msg = str(exc).lower()
         return (
             "out of memory" in msg
-            or "cuda failed" in msg and "memory" in msg
-            or "cublas" in msg and "alloc" in msg
+            or "cuda failed" in msg
+            or "cublas" in msg
+            or "cudnn" in msg
+            or "driver" in msg
+            or "not found or cannot be loaded" in msg
         )
 
     def _maybe_activate_oom_fallback(self, exc: Exception) -> bool:
-        """Switch CUDA Whisper to CPU/int8 once when we hit OOM.
+        """Switch CUDA Whisper to CPU/int8 once when we hit CUDA runtime errors or OOM.
 
-        This keeps sessions alive on low-VRAM machines instead of repeatedly
-        dropping chunks after the first CUDA OOM.
+        This keeps sessions alive on machines with missing CUDA DLLs or low VRAM
+        instead of repeatedly dropping chunks.
         """
         if self._oom_fallback_activated:
             return False
         if self._device.lower() != "cuda":
             return False
-        if not self._is_cuda_oom_error(exc):
+        if not self._is_cuda_runtime_error(exc):
             return False
 
         self._oom_fallback_activated = True
         logger.warning(
-            "faster-whisper CUDA OOM detected; falling back to CPU/int8 for the rest of this session"
+            "faster-whisper CUDA runtime failure (%s); falling back to CPU/int8 for the rest of this session",
+            exc,
         )
         self._device = "cpu"
         self._compute_type = "int8"

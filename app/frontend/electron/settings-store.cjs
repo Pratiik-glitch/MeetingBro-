@@ -53,8 +53,16 @@ function readSettings() {
 }
 
 function writeSettings(partial) {
-  const next = withDefaults({ ...readSettings(), ...(partial || {}) });
-  if (partial && partial.llm) next.llm = { ...readSettings().llm, ...partial.llm };
+  const prev = readSettings();
+  const next = withDefaults({ ...prev, ...(partial || {}) });
+  if (partial && partial.llm) {
+    next.llm = { ...prev.llm, ...partial.llm };
+    // Password fields are intentionally empty in the UI; do not wipe a saved key on Save.
+    const incomingKey = partial.llm.apiKey;
+    if (incomingKey === undefined || incomingKey === null || String(incomingKey).trim() === "") {
+      next.llm.apiKey = prev.llm.apiKey || "";
+    }
+  }
   const dir = app.getPath("userData");
   fs.mkdirSync(dir, { recursive: true });
   const target = settingsPath();

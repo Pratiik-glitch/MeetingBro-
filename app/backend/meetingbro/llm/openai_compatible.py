@@ -14,6 +14,27 @@ _DOTENV_LOADED = False
 
 _LOGGER = logging.getLogger(__name__)
 
+_PLACEHOLDER_API_KEYS = frozenset(
+    {
+        "your_api_key_here",
+        "your-app-key",
+        "sk-your-key-here",
+        "changeme",
+        "replace_me",
+    }
+)
+
+
+def normalize_api_key(raw: str | None) -> str | None:
+    """Return a trimmed API key, or None if missing / placeholder."""
+
+    key = (raw or "").strip()
+    if not key:
+        return None
+    if key.lower() in _PLACEHOLDER_API_KEYS:
+        return None
+    return key
+
 
 def _load_dotenv_if_present() -> None:
     """Load a local .env file without adding a runtime dependency.
@@ -32,9 +53,12 @@ def _load_dotenv_if_present() -> None:
         return
     _DOTENV_LOADED = True
 
+    _script = Path(__file__).resolve()
     candidates = [
         Path.cwd() / ".env",
-        Path(__file__).resolve().parents[4] / ".env",
+        # Walk up from the script file to find .env at any level (handles
+        # both dev layouts where .env is at app/backend/ and packaged layouts).
+        *[_script.parents[i] / ".env" for i in range(min(6, len(_script.parents)))],
     ]
     for path in candidates:
         if not path.exists():
@@ -86,8 +110,9 @@ class OpenAICompatibleClient:
         """
 
         _load_dotenv_if_present()
-        api_key = os.environ.get("MEETINGBRO_LLM_API_KEY") or os.environ.get(
-            "LONGCAT_API_KEY"
+        api_key = normalize_api_key(
+            os.environ.get("MEETINGBRO_LLM_API_KEY")
+            or os.environ.get("LONGCAT_API_KEY")
         )
         if not api_key:
             return None
@@ -145,11 +170,15 @@ class OpenAICompatibleClient:
             "temperature": temperature,
             "stream": False,
         }
+        api_key = normalize_api_key(self._cfg.api_key)
+        if not api_key:
+            raise RuntimeError("LLM API key is missing or invalid. Open Settings to add your key.")
+
         req = urllib.request.Request(
             url,
             data=json.dumps(body).encode("utf-8"),
             headers={
-                "Authorization": f"Bearer {self._cfg.api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             method="POST",

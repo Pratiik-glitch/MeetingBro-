@@ -105,7 +105,7 @@ export async function deleteMeeting(id: string): Promise<void> {
   if (!res.ok) throw new Error(`delete ${res.status}`);
 }
 
-export async function testLlm(input: { api_key: string; base_url?: string; model?: string }): Promise<TestLlmResult> {
+export async function testLlm(input: { api_key?: string; base_url?: string; model?: string }): Promise<TestLlmResult> {
   const res = await fetch(`${httpBase()}/config/test-llm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

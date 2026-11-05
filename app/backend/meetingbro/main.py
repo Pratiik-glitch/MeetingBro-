@@ -693,7 +693,11 @@ async def get_config() -> dict:
     # Effective startup config + hardware recommendations. Never returns the LLM
     # key value — only whether one is configured and a masked tail.
     hardware = getattr(app.state, "hardware_profile", None)
-    llm_key = os.environ.get("MEETINGBRO_LLM_API_KEY") or os.environ.get("LONGCAT_API_KEY")
+    from .llm.openai_compatible import normalize_api_key
+
+    llm_key = normalize_api_key(
+        os.environ.get("MEETINGBRO_LLM_API_KEY") or os.environ.get("LONGCAT_API_KEY")
+    )
     return {
         "whisper_size": getattr(app.state, "whisper_size", "auto"),
         "whisper_device": getattr(app.state, "formal_asr_device", "cpu"),
@@ -716,7 +720,7 @@ async def get_config() -> dict:
 
 
 class TestLlmRequest(BaseModel):
-    api_key: str
+    api_key: Optional[str] = None
     base_url: Optional[str] = None
     model: Optional[str] = None
 
@@ -725,14 +729,24 @@ class TestLlmRequest(BaseModel):
 async def test_llm(req: TestLlmRequest) -> dict:
     # Validate credentials with one tiny chat call. Does not touch global state
     # and never restarts the backend.
-    api_key = (req.api_key or "").strip()
-    if not api_key:
-        return {"ok": False, "error": "API key is required."}
-    base_url = (req.base_url or "https://api.openai.com/v1").strip().rstrip("/")
-    model = (req.model or "gpt-4o-mini").strip()
-    client = OpenAICompatibleClient(
-        OpenAICompatibleConfig(api_key=api_key, base_url=base_url, model=model, timeout_seconds=20.0)
-    )
+    from .llm.openai_compatible import normalize_api_key
+
+    api_key = normalize_api_key(req.api_key)
+    if api_key:
+        base_url = (req.base_url or "https://api.openai.com/v1").strip().rstrip("/")
+        model = (req.model or "gpt-4o-mini").strip()
+        client = OpenAICompatibleClient(
+            OpenAICompatibleConfig(api_key=api_key, base_url=base_url, model=model, timeout_seconds=20.0)
+        )
+        model_label = model
+    else:
+        client = OpenAICompatibleClient.from_env()
+        if client is None:
+            return {
+                "ok": False,
+                "error": "API key is required. Paste your key above or save it in Settings first.",
+            }
+        model_label = client.model
 
     loop = asyncio.get_running_loop()
     start = datetime.now(timezone.utc)
@@ -742,9 +756,9 @@ async def test_llm(req: TestLlmRequest) -> dict:
             lambda: client.chat(system="You are a connectivity check.", user="Reply with OK.", max_tokens=5),
         )
     except Exception as exc:  # noqa: BLE001 - surface the provider error to the UI
-        return {"ok": False, "model": model, "error": str(exc)}
+        return {"ok": False, "model": model_label, "error": str(exc)}
     latency_ms = int((datetime.now(timezone.utc) - start).total_seconds() * 1000)
-    return {"ok": True, "model": model, "latency_ms": latency_ms}
+    return {"ok": True, "model": model_label, "latency_ms": latency_ms}
 
 
 @app.post("/notes", response_model=Note)

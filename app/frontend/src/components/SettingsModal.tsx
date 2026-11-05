@@ -53,7 +53,11 @@ export function SettingsModal({ open, onClose, sessionActive }: SettingsModalPro
     setTesting(true);
     setTestResult(null);
     try {
-      const result = await testLlm({ api_key: settings.llm.apiKey, base_url: settings.llm.baseUrl, model: settings.llm.model });
+      const result = await testLlm({
+        api_key: settings.llm.apiKey.trim() || undefined,
+        base_url: settings.llm.baseUrl,
+        model: settings.llm.model,
+      });
       setTestResult(result);
     } catch (err) {
       setTestResult({ ok: false, error: (err as Error).message });
@@ -110,6 +114,9 @@ export function SettingsModal({ open, onClose, sessionActive }: SettingsModalPro
                 <span>API key</span>
                 <input type="password" value={settings.llm.apiKey} placeholder={config?.llm_key_masked ?? "sk-…"} onChange={(e) => updateLlm({ apiKey: e.target.value })} />
               </label>
+              {config?.llm_configured && !settings.llm.apiKey.trim() && (
+                <p className="settings-hint">A key is already saved ({config.llm_key_masked ?? "••••"}). Leave blank to keep it, or paste a new key to replace it.</p>
+              )}
               <label className="settings-field">
                 <span>Base URL</span>
                 <input type="text" value={settings.llm.baseUrl} onChange={(e) => updateLlm({ baseUrl: e.target.value })} />
@@ -119,7 +126,7 @@ export function SettingsModal({ open, onClose, sessionActive }: SettingsModalPro
                 <input type="text" value={settings.llm.model} onChange={(e) => updateLlm({ model: e.target.value })} />
               </label>
               <div className="settings-actions-inline">
-                <button type="button" className="settings-btn" onClick={onTest} disabled={testing || !settings.llm.apiKey}>
+                <button type="button" className="settings-btn" onClick={onTest} disabled={testing || (!settings.llm.apiKey.trim() && !config?.llm_configured)}>
                   {testing ? "Testing…" : "Test connection"}
                 </button>
                 {testResult && (
