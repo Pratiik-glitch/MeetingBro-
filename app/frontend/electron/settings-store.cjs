@@ -24,7 +24,7 @@ function defaultSettings() {
     llm: { apiKey: "", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
     whisperSize: "auto", // auto | tiny | base | small | medium | large-v2 | large-v3
     whisperDevice: "auto", // auto | cpu | cuda
-    previewBackend: "qwen3", // qwen3 | shared
+    previewBackend: "whisper-streaming", // whisper-streaming | qwen3 | shared
   };
 }
 
@@ -105,6 +105,8 @@ function settingsToEnv(settings) {
 
   if (s.previewBackend === "qwen3") {
     env.MEETINGBRO_PREVIEW_ASR_BACKEND = "qwen3";
+  } else if (s.previewBackend === "whisper-streaming") {
+    env.MEETINGBRO_PREVIEW_ASR_BACKEND = "whisper-streaming";
   } else {
     // "shared" reuses the formal model for previews (no separate preview model).
     env.MEETINGBRO_PREVIEW_ASR_BACKEND = "";

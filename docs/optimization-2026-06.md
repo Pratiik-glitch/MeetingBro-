@@ -25,7 +25,7 @@ Direction: **more accurate + faster**, under four self-imposed constraints:
 | **CPU-first** | GPU / `large-v3-turbo` / batched inference are opt-in enhancements, never the default. |
 | **Measure first** | No change ships without a before/after number. Issue #7 (the benchmark harness) gates everything else. |
 
-The work was tracked as GitHub issues #7–#18 on the `armpro24-blip/MeetingBro`
+The work was tracked as GitHub issues #7–#18 on the `Pratiik-glitch/MeetingBro-`
 remote.
 
 ---

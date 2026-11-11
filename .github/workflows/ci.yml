@@ -39,7 +39,7 @@ jobs:
       - name: Run tests (if any exist)
         run: |
           if find tests/ -name "*.py" | grep -q .; then
-            pip install pytest
+            pip install pytest httpx
             pytest tests/
           else
             echo "No tests found in tests/, skipping pytest"

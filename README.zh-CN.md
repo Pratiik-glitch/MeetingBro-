@@ -13,7 +13,7 @@ MeetingBro 能够监听你的会议内容，实时将语音转录为文字，自
 支持平台：Windows、macOS、Linux。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/armpro24-blip/MeetingBro/actions/workflows/ci.yml/badge.svg)](https://github.com/armpro24-blip/MeetingBro/actions/workflows/ci.yml)
+[![CI](https://github.com/Pratiik-glitch/MeetingBro-/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratiik-glitch/MeetingBro-/actions/workflows/ci.yml)
 
 ---
 
@@ -193,7 +193,7 @@ MeetingBro 的使用体验很大程度上取决于根据你的设备选择合适
 ### 步骤 1 —— 克隆仓库
 
 ```bash
-git clone https://github.com/armpro24-blip/MeetingBro.git
+git clone https://github.com/Pratiik-glitch/MeetingBro-.git
 cd MeetingBro
 ```
 

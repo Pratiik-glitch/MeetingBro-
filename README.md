@@ -13,7 +13,7 @@ It works with Zoom, Teams, Google Meet, BBB, and any other platform, because it 
 Platform support: Windows, macOS, and Linux.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/armpro24-blip/MeetingBro/actions/workflows/ci.yml/badge.svg)](https://github.com/armpro24-blip/MeetingBro/actions/workflows/ci.yml)
+[![CI](https://github.com/Pratiik-glitch/MeetingBro-/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratiik-glitch/MeetingBro-/actions/workflows/ci.yml)
 
 ---
 
@@ -196,7 +196,7 @@ Language choice is separate:
 ### Step 1 — Clone the repository
 
 ```bash
-git clone https://github.com/armpro24-blip/MeetingBro.git
+git clone https://github.com/Pratiik-glitch/MeetingBro-.git
 cd MeetingBro
 ```
 
